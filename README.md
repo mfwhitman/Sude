@@ -15,30 +15,25 @@ Press Enter to perform a single sweep of the board.
 
 ## Files
 
-### Processing Files:
-Sude.pde - 			Runs the Processing Sketch, catches keyboard/mouse presses.
-
-SudePuzzle.pde - 	Establishes the basic board logic, and the deductive patterns.
-
-SudeDisplay.pde - 	Draws the UI.
-
-
-### Java Classes:
-
-SudeCell.java - 	Describes a single cell of a Sudoku board.
-
-CellQueue.java - 	Describes a collection of cells.
-
-SudeGraph.java - 	Converts a collection of cells into a multigraph.
-
-GraphEdge.java - 	Describes an edge of a multigraph.
+| Filename | Description |
+| ---------|-------------|
+| .pde | Processing Files |
+| Sude.pde | Runs the Processing Sketch, catches keyboard/mouse presses. |
+| SudePuzzle.pde | Establishes the basic board logic, and the deductive patterns. |
+| SudeDisplay.pde | Renders the Sudoku board. |
+| ---------|-------------|
+| .java | Java Classes |
+| SudeCell.java | Describes a single cell of a Sudoku board. |
+| CellQueue.java | Describes a collection of cells. |
+| SudeGraph.java | Converts a collection of cells into a multigraph. |
+| GraphEdge.java | Describes an edge of a multigraph. |
 
 
 ## Terminology
 
 **Cell**: One of 81 spaces on a Sudoku board. These are stored in row-major order. Each cell has a value.
 
-**Candidate**: A possible value of a cell. Each cell has 9 candidates, 1 to 9.
+**Candidate**: A possible value of a cell. Initially, each cell has nine candidates (1 to 9) that will be eliminated/excluded until one remains.
 
 **Ascent**: Any row, column or 3*3 box that contains the numbers 1 to 9.
 
