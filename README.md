@@ -17,11 +17,12 @@ Press Enter to perform a single sweep of the board.
 
 | Filename | Description |
 | ---------|-------------|
+| | |
 | .pde | Processing Files |
 | Sude.pde | Runs the Processing Sketch, catches keyboard/mouse presses. |
 | SudePuzzle.pde | Establishes the basic board logic, and the deductive patterns. |
 | SudeDisplay.pde | Renders the Sudoku board. |
-| ---------|-------------|
+| | |
 | .java | Java Classes |
 | SudeCell.java | Describes a single cell of a Sudoku board. |
 | CellQueue.java | Describes a collection of cells. |
@@ -46,7 +47,7 @@ When *n* cells in an ascent share the same *n* candidates, and nothing else.
 As the final value of these *n* cells will be a permutation of those *n* candidates, they can be eliminated from the other cells in the ascent.
 
 ### Hidden Tuple:
-When *n* candidates only occur in *n* cells in an ascent.
+When the same *n* candidates only occur in the *n* cells in an ascent.
 (These cells may contain other candidates.)
 As no other cell has these candidates, every other candidate can be eliminated from these cells.
 

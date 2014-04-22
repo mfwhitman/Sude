@@ -1,7 +1,7 @@
 class SudeDisplay {
 	int tableWidth, fontSize;
 	color fontActive, fontDependent, fontNormal, cellActive, cellDependent, cellNormal, cellBorder, backNormal;
-  PFont f;
+  PFont f, s;
 
 	int activeRow = -16, activeCol = -16;
 
@@ -19,6 +19,7 @@ class SudeDisplay {
 		backNormal =    color(125, 125, 125);
 
     f = createFont("Calibri Bold", fontSize);
+    s = createFont("Calibri Bold", 8);
     textFont(f);
     textAlign(CENTER, CENTER);
 
@@ -27,6 +28,7 @@ class SudeDisplay {
 
 	void displayAll(SudePuzzle input) {
 		displayGrid();
+    displayIndices();
 		displayNums(input);
 	}
 
@@ -79,6 +81,33 @@ class SudeDisplay {
 
     }
 
+  }
+
+  void displayIndices() {
+    textFont(s);
+    textAlign(LEFT, TOP);
+
+    fill(100);
+    int xOffset = 3;
+    int yOffset = 3; 
+    int spacing = tableWidth / 9;
+
+    for (int i = 0; i < 9; ++i)
+    {
+      for (int j = 0; j < 9; ++j)
+      {
+
+        int current = j * 9 + i;
+
+        if (current != 0)
+
+          text(current, i*spacing+xOffset, j*spacing+yOffset);
+      }
+    }
+
+    textFont(f);
+    textAlign(CENTER, CENTER);
+    fill(0);
   }
 
 	void displayNums(SudePuzzle input) {

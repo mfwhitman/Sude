@@ -2,16 +2,19 @@ class SudePuzzle {
 
 	SudeCell[] board;
 	CellQueue unknownQueue;
+	int passCount;
 
 	SudePuzzle() {
 		board = new SudeCell[81];
 		unknownQueue = new CellQueue();
+		passCount = 0;
 	}
 
 	SudePuzzle(String input) {
 
 		board = new SudeCell[81];
 		unknownQueue = new CellQueue();
+		passCount = 0;
 
 		if (input.length() != 81) {
 
@@ -69,8 +72,6 @@ class SudePuzzle {
 
 		IntList neighbors = new IntList(81);
 		neighbors = getAscent(found.getPosition(), 0);
-		//print(found.getValue() + " at " + found.getPosition());
-		//println(" has neighbors: "+neighbors);
 
 		for (int i : neighbors) {
 
@@ -102,7 +103,7 @@ class SudePuzzle {
 
 	void solve() {
 
-		populate();
+		if (passCount == 0) populate();
 
 		for (SudeCell selected : board) {
 
@@ -110,12 +111,23 @@ class SudePuzzle {
 
 				unknownQueue.push(selected);
 			}
-		
-}		while (unknownQueue.hasNext()) { //Avoid a foreach loop as the list will be modified after iterator is created.
+		}
+
+		while (unknownQueue.hasNext()) { //Avoid a foreach loop as the list will be modified after iterator is created.
+
 			SudeCell selected = unknownQueue.next();
 			stepBySingle(selected);
-
+			stepByLocked(selected);
+			
+			if (passCount > 4) {
+				CellQueue nakedStep = new CellQueue();
+				nakedStep.push(selected);
+				stepByNaked(nakedStep, 0);
+			}
+			
 		}
+
+		++passCount;
 	}
 
 	boolean sharesAscent(int i, int j, int ascentType) {
@@ -163,11 +175,39 @@ class SudePuzzle {
 		return neighbors;
 	}
 
+	/** Adds a neighboring SudeCell to a queue. Assumes CellQueue are all within an ascent.
+	Returns true on a successful add.*/
+	boolean addSimilar(CellQueue current, int ascentType) {
+
+		IntList check = getAscent(current.peek().getPosition(), ascentType);
+		int sizeCheck = current.size();
+
+		for (int i : check) {
+
+			if ( (current.contains(i)) || (board[i].isKnown())) {
+
+				continue;
+			}
+			else {
+
+				current.push(board[i]);
+
+				if (sizeCheck == current.size()) {
+
+					println("addNeighbor error: same size after push.");
+					println(current.stringify() + " a:" + ascentType);
+				}
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/** Tries to solve current cell using the 'Hidden Single' rule :
 	If any of the current cell's candidates is alone in any ascent, that will be its final value.*/
 	void stepBySingle(SudeCell current) {
-
-		//println("Checking if [" + current.getPosition() + "] is hidden single? ");
 		
 		for (int ascent = 1; ascent < 4; ++ascent) {
 			
@@ -185,11 +225,6 @@ class SudePuzzle {
 				else {
 
 					accumulator.subtract(board[i].getCandidates());
-					/*for (int j = 1; j < 10; ++j) {
-						if (board[i].hasCandidate(j)) {
-							accumulator.exclude(j);
-						}
-					}*/
 				}
 
 				answer = accumulator.getLast();
@@ -210,162 +245,161 @@ class SudePuzzle {
 	If the union of n cells' candidate lists has length n,
 		and it is unique,
 			every other candidate belonging to those cells can be eliminated.
-	*/
-	void stepByNaked() {
 
+	Works via recursion. Given the ascent type and what is already 
+	*/
+	void stepByNaked(CellQueue cells, int ascentType) {
+
+		if ((ascentType == 0)) { // Start recursing. maybe drop size as a predicate. (cells.size() == 1) &&
+
+			//println("Starting Naked check on " + cells.stringify() + ", Ascent: " + ascentType);
+
+			for (int a = 1; a < 4; ++a) {
+
+				CellQueue child = new CellQueue();
+				child.copy(cells);
+
+				if (addSimilar(child, a)) {
+
+					stepByNaked(child, a);
+				}
+			}
+		}
+		else {
+
+			//println("Continuing Naked check on " + cells.stringify() + ", Ascent: " + ascentType);
+
+			SudeCell test = new SudeCell();
+			test.clearCandidates();
+
+			int cellCount = cells.size();
+
+			if (cellCount > 4) {
+				println("...Too big.");
+				return;
+			}
+
+			for (SudeCell i : cells) {
+				test.union(i.getCandidates());
+			}
+
+			int candidateCount = test.countCandidates();
+
+			//Prepare remaining unselected, unknown neighbors.
+			CellQueue unselected = new CellQueue();
+			IntList neighbors = getAscent(cells.peek().getPosition(), ascentType);
+
+			for (int i : neighbors) {
+				if ((cells.contains(i) == false) && (board[i].isKnown() == false)) {
+					unselected.push(board[i]);
+				}
+			}
+
+			if (unselected.size() == 0) {
+				println("...Nothing left.");
+				return;
+			}
+
+			//if candidate count and cell count match, start excluding.
+			if (cellCount == candidateCount) {
+
+				print("Naked " + cellCount + "-tuple found: " + cells.stringify() + " ");
+				test.report();
+
+
+				println("Excluding from: " + unselected.stringify());
+				unselected.subtract(test.getCandidates());
+
+			}
+
+			//if ascent contains no unselected candidates, bail.
+
+			if (((cellCount + 1) == candidateCount) || (cells.size() == 1)) {
+
+				CellQueue child = new CellQueue();
+				child.copy(cells);
+
+				if (addSimilar(child, ascentType)) {
+
+					stepByNaked(child, ascentType);
+				}
+			}
+		}
 	}
 
 	/** Tries to solve current cell using the 'Hidden N-tuple' rule.
 	If (n) 
 	*/
-	void stepByHidden() {
+	void stepByHidden(SudeCell current) {
 
 	}
 
 	/** Tries to solve current cell using the 'Locked Candidates' rule.
-	If the intersection of ascents A and B contains a candidate,
+	If the intersection of ascents A and B contains candidate x,
 		and that candidate does not exist in A - B,
 			then it can be eliminated from B - A.
+	(provided that neither A nor B already has x as a known value.)
 	*/
-	void stepByLocked() {
+	void stepByLocked(SudeCell current) {
 
-	}
+		for (int ascentLine = 2; ascentLine < 4; ++ascentLine) {
 
-	/** To solve by elimination, all numbers but one have to be eliminated from a cell's co-dependents. 
-	void stepElimination(SudeCell active) {
+			CellQueue inter = new CellQueue();
+			CellQueue boxed = new CellQueue();
+			CellQueue lined = new CellQueue();
 
-		//boolean[] found = new boolean[10];
+			IntList neighborsBox = getAscent(current.getPosition(), 1);
+			IntList neighborsLine = getAscent(current.getPosition(), ascentLine);
+			IntList combined = new IntList();
+			combined.append(neighborsBox);
+			combined.append(neighborsLine);
 
-		for (SudeCell i : board) {
+			String lineWord = (ascentLine == 2 ? "Row" : "Col");
 
-			if (!active.isValue(0)) {
-				continue;
-			}
-			else if (sameRow(active, i) || sameCol(active, i) || sameBox(active, i)) {
-				if ((eliminatedNumbers[active][board[i]] == false) && (board[i] != 0)) {
-					eliminatedNumbers[active][board[i]] = true;
+			for (int i : combined) {
 
-					//println("bStep Debug: " + board[i] + " eliminated at " + active);
-				}
-			}
-		}
+				if (neighborsBox.hasValue(i)) {
 
-		int candidate = active.getLast();
+					if (neighborsLine.hasValue(i)) {
 
-		if (candidate != 0)	{
-			println("Solved ");
-		}
+						inter.push(board[i]);
+					} 
+					else {
 
-	}*/
-
-	/** To solve by deduction, an unknown number in an ascent has to be eliminated from all but one cell. 
-	void stepDeduction(int active, int ascentType) {
-
-		CellQueue contents = new CellQueue();
-
-		for (int i = 0; i < 81; ++i) {
-			if (sameAscent(active, i, ascentType)) {
-				contents.push(i);
-			}
-		}
-
-		boolean[] numeralsFound = new boolean[10];
-		int[] possible = new int[10];
-
-		for (int i = 0; i < 10; ++i) {
-			numeralsFound[i] = false;
-			possible[i] = 0;
-		}
-
-		for (int i = 0; i < contents.size(); ++i) {
-			int current = contents.get(i);
-
-			if (board[current] != 0) {
-				numeralsFound[board[current]] = true;
-			}
-			else {
-				for (int num = 1; num < 10; ++num) {
-					if (eliminatedNumbers[current][num] == false) {
-						possible[num]++;
+						boxed.push(board[i]);
 					}
+				} 
+				else {
+
+					lined.push(board[i]);
 				}
 			}
-		}
+			
+			for (int candidate = 1; candidate < 10; ++candidate) {
 
-		for (int i = 1; i < 10; ++i) {
-			if (numeralsFound[i] == false) {
-				//println(i + "s location is unknown, with " + possible[i] + " possible positions.");
-				if (possible[i] == 1) {
-					for (int search = 0; search < contents.size(); ++search) {
-						int current = contents.get(search);
-						if ((board[current] == 0) && (eliminatedNumbers[current][i] == false)) {
-							println("Found " + i + " at " + current + " by deduction.");
-							set(current, i);
+				if ((inter.hasValue(candidate) == false) && (inter.hasCandidate(candidate))) {
+
+					if ((boxed.hasValue(candidate) == false) && (boxed.hasCandidate(candidate) == false)) {
+
+						if (lined.hasCandidate(candidate)) {
+
+							println("Box-" + lineWord + current.stringify() + " has no " + 
+											candidate + " in the box. Excluding " + lineWord + ".");
+							lined.exclude(candidate);
+						}
+					}
+					else if ((lined.hasValue(candidate) == false) && (lined.hasCandidate(candidate) == false)) {
+
+						if (boxed.hasCandidate(candidate)) {
+
+							println("Box-" + lineWord + current.stringify()+ " has no " + 
+											candidate + " in the " + lineWord + ". Excluding box.");
+							boxed.exclude(candidate);
 						}
 					}
 				}
 			}
 		}
-
-		contents.clear();
-
-	}*/
-
-	/*
-	void search() {
-
-		for (SudeCell selected : board) {
-
-			if  ((!unknownQueue.contains(selected)) && (selected.isValue(0))) {
-
-				unknownQueue.push(selected);
-			}
-		}
-
-		for (int i = 0; i < unknownQueue.size(); ++i) {
-
-			SudeCell currentCell = unknownQueue.pop();
-
-			stepElimination(currentCell);
-
-			if (currentCell.isValue(0)) {
-				//println("Breadth Search: nothing found at " + currentCell);
-				unknownQueue.push(currentCell);
-			}
-
-		}
-
-		for (int i = 0; i < 9; ++i) {
-			int currentCell = i * 10;
-
-			stepDeduction(currentCell, 0);
-			stepDeduction(currentCell, 1);
-
-			currentCell = i * 9;
-
-		}
-
-		for (int i = 0; i < 3; ++i) {
-			for (int j = 0; j < 3; ++j) {
-				int currentCell = i * 27 + j * 3;
-				stepDeduction(currentCell, 2);
-			}
-		}
-
 	}
-
-	boolean sameRow(int i, int j)
-	{
-		return (i/9 == j/9);
-	}
-
-	boolean sameCol(int i, int j) {
-		return ((i-j) % 9 == 0);
-	}
-
-	boolean sameBox(int i, int j) {
-		return ((i/27 == j/27) && (i%9/3 == j%9/3));
-	}*/
-
 
 }

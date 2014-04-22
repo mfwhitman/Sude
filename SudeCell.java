@@ -63,6 +63,18 @@ public class SudeCell {
 		}
 	}
 
+	SudeCell() {
+		
+		position = -1;
+		value = 0;
+		candidate = new boolean[10];
+
+		for (int i = 0; i < 10; ++i) {
+
+			candidate[i] = true;
+		}
+	}
+
 	public int getPosition() {
 		return position;
 	}
@@ -85,6 +97,21 @@ public class SudeCell {
 
 	public boolean[] getCandidates() {
 		return candidate;
+	}
+
+	public int countCandidates() {
+
+		int sum = 0;
+
+		for (int i = 1; i < 10; ++i) {
+
+			if (candidate[i] == true) {
+
+				++sum;
+			}
+		}
+
+		return sum;
 	}
 
 	public void clearCandidates() {
@@ -179,20 +206,6 @@ public class SudeCell {
 		return result;
 	}
 
-	/*public boolean[] subtract(boolean[] other) {
-
-		boolean[] result = new boolean[10];
-
-		for (int i = 1; i < 10; ++i) {
-
-			result[i] = (this.candidate[i] && !other[i]); //other.candidate[i]
-		}
-
-		result[0] = false; //Not strictly necessary
-
-		return result;
-	}*/
-
 	public void subtract(boolean[] other) {
 
 		for (int i = 1; i < 10; ++i) {
@@ -203,9 +216,24 @@ public class SudeCell {
 		candidate[0] = false; //Not strictly necessary
 	}
 
+	public void union(boolean[] other) {
+
+		for (int i = 1; i < 10; ++i) {
+
+			candidate[i] = (candidate[i] || other[i]);
+		}
+
+		candidate[0] = false;
+	}
+
 	public void report() {
 
-		System.out.print("[" + position + "] ");
+		if (position != -1) {
+			System.out.print("[" + position + "] ");
+		}
+		else {
+			System.out.print("It ");
+		}
 
 		if (value > 0) {
 
@@ -225,6 +253,56 @@ public class SudeCell {
 
 			System.out.println("");
 		}
+	}
 
+	public String stringify() {
+		String word = " [" + this.getPosition() + "] ";
+		return word;
+	}
+
+	public int inCommon(SudeCell other) {
+
+		int commonCandidates = 0;
+
+		for (int i = 1; i < 10; ++i) {
+
+			if (this.candidate[i] == other.hasCandidate(i)) {
+
+				commonCandidates++;
+			}
+		}		
+
+		return commonCandidates;
+	}
+
+	public boolean isNeighbor(SudeCell other, int ascentType) {
+
+		int i = this.position;
+		int j = other.getPosition();
+
+		boolean answer = false;
+
+		switch(ascentType) {
+
+			case 0: // Any Ascent
+				answer = (	((i/27 == j/27) && (i%9/3 == j%9/3)) ||
+										(i/9 == j/9) ||
+										((i-j) % 9 == 0) );
+				break;
+			
+			case 1: // Same Box
+				answer = ((i/27 == j/27) && (i%9/3 == j%9/3));
+				break;
+			case 2: // Same Row
+				answer = (i/9 == j/9);
+				break;
+			case 3: // Same Column
+				answer = ((i-j) % 9 == 0);
+				break;
+			default:
+				System.out.println("isNeighbor ascent failure: " + ascentType);
+				break;
+			}
+		return answer;
 	}
 }
