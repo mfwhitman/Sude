@@ -19,7 +19,8 @@ public class GraphEdge {
 		}
 	}
 
-	public void report() {
-		System.out.println(type + "-Edge connects [" + first + "] and [" + second + "]");
+	public String stringify() {
+		String word = "" + type + "-Edge connects [" + first + "] and [" + second + "]";
+		return word;
 	}
 }

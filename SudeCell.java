@@ -1,4 +1,6 @@
-public class SudeCell {
+import java.util.Comparator;
+
+public class SudeCell implements Comparable<SudeCell>{
 
 	private int position;
 	private int value;
@@ -80,7 +82,7 @@ public class SudeCell {
 	}
 
 	public boolean isKnown() {
-		return (!(this.value == 0));
+		return (this.value != 0);
 	}
 
 	public boolean isValue(int i) {
@@ -303,6 +305,19 @@ public class SudeCell {
 				System.out.println("isNeighbor ascent failure: " + ascentType);
 				break;
 			}
+		return answer;
+	}
+
+	@Override
+	public int compareTo(SudeCell o) {
+		int answer = 0;
+		if (this.position < o.getPosition()) {
+			answer = -1;
+		} else if (this.position == o.getPosition()) {
+			answer = 0;
+		} else if (this.position > o.getPosition()) {
+			answer = 1;
+		}
 		return answer;
 	}
 }

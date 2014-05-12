@@ -1,7 +1,9 @@
 import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.Collections;
+import java.util.Comparator;
 
-public class CellQueue implements Iterable<SudeCell>{ 
+public class CellQueue implements Iterable<SudeCell> {
 	
 	private LinkedList<SudeCell> queue = new LinkedList<SudeCell>();
 
@@ -46,16 +48,21 @@ public class CellQueue implements Iterable<SudeCell>{
 		queue.clear();
 	}
 
-	public void remove() {
-		queue.remove(queue.size() - 1);
-	}
 
 	public boolean hasNext() {
 		return (queue.size() != 0);
 	}
 
 	public SudeCell next() {
+		return queue.removeLast();
+	}
+
+	public SudeCell removeLast() {
 		return (queue.removeLast());
+	}
+
+	public SudeCell removeFirst() {
+		return (queue.removeFirst());
 	}
 
 	public SudeCell peek() {
@@ -124,6 +131,20 @@ public class CellQueue implements Iterable<SudeCell>{
 		return isPresent;
 	}
 
+	public int countCandidates(int i) {
+
+		int count = 0;
+
+		for (SudeCell current : queue) {
+
+			if (current.hasCandidate(i) == true) {
+
+				count++;
+			}
+		}
+		return count;
+	}
+
 	/** Excludes a candidate from an entire queue. */
 	public void exclude(int i) {
 
@@ -150,5 +171,17 @@ public class CellQueue implements Iterable<SudeCell>{
 		}
 
 		return concatenator;
+	}
+
+	public void sort() {
+
+		Collections.sort(this.queue, new Comparator<SudeCell>() {
+
+			@Override
+			public int compare(SudeCell left, SudeCell right) {
+				
+				return left.compareTo(right);
+			}
+		});
 	}
 }
